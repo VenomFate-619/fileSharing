@@ -11,7 +11,7 @@ async function sendmail({ from, to, subject, text, html }) {
       pass: process.env.MAIL_PASS,
     },
   //   tls: {
-  //     rejectUnauthorized: false
+  //     rejectUnauthorized: true
   // }
   });
   try {
@@ -24,7 +24,7 @@ async function sendmail({ from, to, subject, text, html }) {
     });
     return {msg:"success"}
   } catch (error) {
-    console.log(error)
+    
     throw new Error("Error in sending mail")
   }
 }

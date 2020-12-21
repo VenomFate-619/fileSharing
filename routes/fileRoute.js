@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { UploadFile, dowload, sendEmail } = require("../controller/fileRoute");
+const { UploadFile, download, sendEmail } = require("../controller/fileRoute");
 const upload = require("../util/uploadConfig");
 
 router.post(
@@ -20,7 +20,7 @@ router.post(
   UploadFile
 );
 
-router.get("/files/:id", dowload);
+router.get("/files/:id", download);
 
 router.post("/send", sendEmail);
 

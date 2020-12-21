@@ -1,7 +1,7 @@
 const File = require("../model/file");
 const sendmail = require("../util/sendEmail");
 const temp = require("../util/emailtemp");
-const upload = require("../util/uploadConfig");
+const path = require("path");
 
 module.exports = {
   UploadFile: (req, res) => {
@@ -14,19 +14,21 @@ module.exports = {
       .then((data) =>
         res.json({ data, file: `${process.env.APP_BASE_URL}/files/${data.id}` })
       )
-      .catch((err) => res.json({ err }));
-    // database
-
-    // response
+      .catch((err) => {
+        res.status(505).json({ error: "internal server error" });
+      });
   },
-  dowload: async (req, res) => {
+  download: async (req, res) => {
     try {
       let file = await File.findOne({ uuid: req.params.id });
-      return res.json({
-        file,
-        uri: `${process.env.APP_BASE_URL}/files/dowload/${file.uuid}`,
-      });
-
+      if (!!file) {
+        return res.download(path.join(__dirname, `../upload/${file.filename}`));
+      }
+      return res
+        .status(404)
+        .json({
+          msg: "Cannot find such file may be id is wrong or file is expired",
+        });
       // res.dowload() insert the path of folder
     } catch (error) {
       return res.status(505).json({ error: "No file found" });
@@ -37,14 +39,14 @@ module.exports = {
       const { uuid, emailTo, emailFrom } = req.body;
       // validation
       let file = await File.findOne({ uuid });
-      if (file.sender) {
-        return res.status(400).json({ error: "Email already send" });
+      if (!file) {
+        return res.status(400).json({ error: "uuid is incorrect" });
       }
       file.sender = emailFrom;
       file.receiver = emailTo;
       await file.save();
       // send email
-    let msg= await sendmail({
+      let msg = await sendmail({
         from: emailFrom,
         to: emailTo,
         subject: "File Share",
@@ -52,14 +54,14 @@ module.exports = {
         html: temp({
           emailFrom,
           downloadLink: `${process.env.APP_BASE_URL}/files/${uuid}`,
-          size: parseInt(file.size/1000) + " kb",
-          expires:'24hr'
+          size: parseInt(file.size / 1000) + " kb",
+          expires: "24hr",
         }),
       });
-      return res.json(msg)
+      return res.json(msg);
     } catch (error) {
-        
-        return res.json({error:"ERROR in sending mail"})
+      console.log(error)
+      return res.json({ error: "ERROR in sending mail" });
     }
   },
 };
